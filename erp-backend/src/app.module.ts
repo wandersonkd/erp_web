@@ -5,25 +5,28 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { RolesModule } from './roles/roles.module';
 import { User } from './users/entities/user.entity';
+import { Role } from './roles/entities/role.entity';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, // Makes environment variables available globally
+      isGlobal: true,
     }),
     TypeOrmModule.forRoot({
       type: 'mysql',
-      host: 'localhost', // TODO: Replace with your database host
-      port: 3306,
-      username: 'root', // TODO: Replace with your database username
-      password: 'password', // TODO: Replace with your database password
-      database: 'erp_db', // TODO: Replace with your database name
-      entities: [User],
-      synchronize: true, // DEV only: automatically creates schema. Disable in production.
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT, 10) || 3306,
+      username: process.env.DB_USERNAME || 'root',
+      password: process.env.DB_PASSWORD || 'password',
+      database: process.env.DB_DATABASE || 'erp_db',
+      entities: [User, Role], // Add Role entity here
+      synchronize: process.env.NODE_ENV !== 'production',
     }),
     UsersModule,
     AuthModule,
+    RolesModule, // Import RolesModule here
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,19 +1,25 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
+import { RolesService } from '../roles/roles.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly rolesService: RolesService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<Omit<User, 'senha_hash'>> {
-    const { email, senha, nome, cargo } = createUserDto;
+    const { email, senha, nome } = createUserDto; // cargo is removed
 
     // RGN001: Check if email already exists
     const existingUser = await this.userRepository.findOne({ where: { email } });
@@ -30,20 +36,46 @@ export class UsersService {
       nome,
       email,
       senha_hash,
-      cargo,
-      // RGN004: 'ativo' defaults to true in the entity definition
+      // By default, roleId will be null
     });
 
     // Save the new user
     const savedUser = await this.userRepository.save(newUser);
 
-    // TypeORM's save method returns the entity, but we'll manually omit the hash
-    // The @Exclude decorator on the entity also handles this for class-transformer
     const { senha_hash: _, ...result } = savedUser;
     return result;
   }
 
   async findOneByEmail(email: string): Promise<User | undefined> {
-    return this.userRepository.findOne({ where: { email } });
+    // Eagerly load the role relationship for JWT payload enrichment
+    return this.userRepository.findOne({ where: { email }, relations: ['role'] });
+  }
+
+  async findOneById(id: string): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { id } });
+    if (!user) {
+      throw new NotFoundException(`User with ID "${id}" not found.`);
+    }
+    return user;
+  }
+
+  /**
+   * Assigns a role to a user.
+   * RGN010: A user can only be associated with a role that exists.
+   * @param userId The ID of the user.
+   * @param roleId The ID of the role.
+   * @returns The updated user, excluding the password hash.
+   */
+  async assignRoleToUser(userId: string, roleId: string): Promise<Omit<User, 'senha_hash'>> {
+    const user = await this.findOneById(userId);
+    const role = await this.rolesService.findOne(roleId); // Throws if not found
+
+    user.role = role;
+    const updatedUser = await this.userRepository.save(user);
+
+    // The @Exclude decorator on the entity handles this for class-transformer responses,
+    // but we explicitly remove it here to be safe.
+    const { senha_hash: _, ...result } = updatedUser;
+    return result;
   }
 }

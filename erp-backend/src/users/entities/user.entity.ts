@@ -5,7 +5,10 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
+import { Role } from '../../roles/entities/role.entity';
 
 @Entity('usuarios')
 export class User {
@@ -22,8 +25,16 @@ export class User {
   @Exclude() // Prevents sending this field in responses
   senha_hash: string;
 
-  @Column({ length: 100, nullable: true })
-  cargo: string;
+  @Column({ name: 'role_id', type: 'varchar', length: 36, nullable: true })
+  roleId: string;
+
+  @ManyToOne(() => Role, {
+    eager: false, // Load role relation manually when needed
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE',
+  })
+  @JoinColumn({ name: 'role_id' })
+  role: Role;
 
   @Column({ default: true })
   ativo: boolean;
