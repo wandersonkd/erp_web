@@ -42,4 +42,8 @@ export class UsersService {
     const { senha_hash: _, ...result } = savedUser;
     return result;
   }
+
+  async findOneByEmail(email: string): Promise<User | undefined> {
+    return this.userRepository.findOne({ where: { email } });
+  }
 }
