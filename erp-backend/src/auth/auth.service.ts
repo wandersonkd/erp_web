@@ -32,12 +32,17 @@ export class AuthService {
 
   /**
    * Generates a JWT access token for a given user.
-   * @param user - The user object.
+   * The user object is expected to have the 'role' relation loaded from `validateUser`.
+   * @param user - The user object, including role information.
    * @returns An object containing the access token.
    */
-  async login(user: Omit<User, 'senha_hash'>) {
-    // RGN008: Generate JWT with user ID (sub) and email in the payload
-    const payload = { email: user.email, sub: user.id };
+  async login(user: User) {
+    // RGN011: Enrich JWT payload with user's role name.
+    const payload = {
+      email: user.email,
+      sub: user.id,
+      role: user.role?.nome, // Safely access role name, it could be null
+    };
     return {
       access_token: this.jwtService.sign(payload),
     };
