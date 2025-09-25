@@ -36,7 +36,7 @@ export class AuthService {
    * @param user - The user object, including role information.
    * @returns An object containing the access token.
    */
-  async login(user: User) {
+  async login(user: Omit<User, 'senha_hash'>) {
     // RGN011: Enrich JWT payload with user's role name.
     const payload = {
       email: user.email,

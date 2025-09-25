@@ -30,7 +30,11 @@ const authOptions: AuthOptions = {
           if (user && user.access_token) {
             // NextAuth expects the user object to be returned here.
             // We can attach the token to the user object to pass it to the jwt callback.
-            return { ...user, email: credentials.email };
+            return {
+              id: '1', // Placeholder ID since backend doesn't return user ID
+              email: credentials.email,
+              accessToken: user.access_token,
+            };
           }
 
           return null; // Login failed
@@ -43,6 +47,9 @@ const authOptions: AuthOptions = {
       },
     }),
   ],
+  pages: {
+    signIn: '/login',
+  },
   session: {
     strategy: 'jwt',
   },
@@ -51,7 +58,7 @@ const authOptions: AuthOptions = {
       // On sign-in, the `user` object from `authorize` is passed.
       // We persist the access_token to the NextAuth token.
       if (user) {
-        token.accessToken = (user as any).access_token;
+        token.accessToken = (user as any).accessToken;
       }
       return token;
     },
@@ -62,9 +69,6 @@ const authOptions: AuthOptions = {
       }
       return session;
     },
-  },
-  pages: {
-    signIn: '/login', // Redirect to /login page for signing in
   },
 };
 

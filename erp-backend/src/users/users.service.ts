@@ -48,7 +48,8 @@ export class UsersService {
 
   async findOneByEmail(email: string): Promise<User | undefined> {
     // Eagerly load the role relationship for JWT payload enrichment
-    return this.userRepository.findOne({ where: { email }, relations: ['role'] });
+    const user = await this.userRepository.findOne({ where: { email }, relations: ['role'] });
+    return user || undefined;
   }
 
   async findOneById(id: string): Promise<User> {
