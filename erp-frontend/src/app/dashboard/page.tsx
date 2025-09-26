@@ -2,15 +2,15 @@
 import React from 'react';
 import {
   Typography,
-  Grid,
   Card,
   CardContent,
   Box,
 } from '@mui/material';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const kpiData = [
   {
@@ -31,8 +31,17 @@ const kpiData = [
   {
     title: 'Lucro Previsto',
     value: 'R$ 4.567,89',
-    icon: <AttachMoneyIcon sx={{ fontSize: 40, color: 'primary.main' }} />,
+    icon: <MonetizationOnIcon sx={{ fontSize: 40, color: 'primary.main' }} />,
   },
+];
+
+const salesData = [
+  { month: 'Jan', vendas: 4000 },
+  { month: 'Fev', vendas: 3000 },
+  { month: 'Mar', vendas: 5000 },
+  { month: 'Abr', vendas: 4500 },
+  { month: 'Mai', vendas: 6000 },
+  { month: 'Jun', vendas: 5500 },
 ];
 
 export default function DashboardPage() {
@@ -45,9 +54,9 @@ export default function DashboardPage() {
         Aqui está um resumo rápido da sua empresa.
       </Typography>
 
-      <Grid container spacing={3}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
         {kpiData.map((kpi) => (
-          <Grid item xs={12} sm={6} md={3} key={kpi.title}>
+          <Box key={kpi.title} sx={{ flex: '1 1 300px', maxWidth: '300px' }}>
             <Card>
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -63,9 +72,28 @@ export default function DashboardPage() {
                 </Box>
               </CardContent>
             </Card>
-          </Grid>
+          </Box>
         ))}
-      </Grid>
+      </Box>
+
+      <Box sx={{ mt: 4 }}>
+        <Typography variant="h5" component="h2" gutterBottom>
+          Vendas Mensais
+        </Typography>
+        <Card>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={salesData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Line type="monotone" dataKey="vendas" stroke="#1976d2" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </Box>
     </Box>
   );
 }

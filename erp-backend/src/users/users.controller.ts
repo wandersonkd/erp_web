@@ -7,14 +7,22 @@ import {
   Put,
   Param,
   ParseUUIDPipe,
+  Get,
+  Delete,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { AssignRoleDto } from './dto/assign-role.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Controller('usuarios')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Get()
+  async findAll() {
+    return this.usersService.findAll();
+  }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -22,12 +30,18 @@ export class UsersController {
     return this.usersService.create(createUserDto);
   }
 
-  @Put(':id/role')
+  @Put(':id')
   @HttpCode(HttpStatus.OK)
-  async assignRole(
+  async update(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() assignRoleDto: AssignRoleDto,
+    @Body() updateUserDto: UpdateUserDto,
   ) {
-    return this.usersService.assignRoleToUser(id, assignRoleDto.roleId);
+    return this.usersService.update(id, updateUserDto);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async delete(@Param('id', ParseUUIDPipe) id: string) {
+    await this.usersService.delete(id);
   }
 }

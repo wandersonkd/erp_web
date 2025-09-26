@@ -29,7 +29,7 @@ export default function DashboardLayout({
       >
         <Header />
         {/* Toolbar para criar o espaçamento necessário abaixo do AppBar fixo */}
-        <Toolbar />
+        <Toolbar sx={{ minHeight: 76 }} />
         {children}
       </Box>
     </Box>

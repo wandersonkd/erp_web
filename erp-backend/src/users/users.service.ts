@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { RolesService } from '../roles/roles.service';
 
 @Injectable()
@@ -19,7 +20,7 @@ export class UsersService {
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<Omit<User, 'senha_hash'>> {
-    const { email, senha, nome } = createUserDto; // cargo is removed
+    const { email, senha, nome, roleId } = createUserDto; // cargo is removed
 
     // RGN001: Check if email already exists
     const existingUser = await this.userRepository.findOne({ where: { email } });
@@ -38,6 +39,12 @@ export class UsersService {
       senha_hash,
       // By default, roleId will be null
     });
+
+    // If roleId is provided, associate the role
+    if (roleId) {
+      const role = await this.rolesService.findOne(roleId);
+      newUser.role = role;
+    }
 
     // Save the new user
     const savedUser = await this.userRepository.save(newUser);
@@ -60,13 +67,45 @@ export class UsersService {
     return user;
   }
 
-  /**
-   * Assigns a role to a user.
-   * RGN010: A user can only be associated with a role that exists.
-   * @param userId The ID of the user.
-   * @param roleId The ID of the role.
-   * @returns The updated user, excluding the password hash.
-   */
+  async findAll(): Promise<Omit<User, 'senha_hash'>[]> {
+    const users = await this.userRepository.find({ relations: ['role'] });
+    return users.map((user) => {
+      const { senha_hash, ...result } = user;
+      return result;
+    });
+  }
+
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<Omit<User, 'senha_hash'>> {
+    const user = await this.findOneById(id);
+
+    if (updateUserDto.email) {
+      const existingUser = await this.userRepository.findOne({ where: { email: updateUserDto.email } });
+      if (existingUser && existingUser.id !== id) {
+        throw new ConflictException('Este e-mail já está em uso.');
+      }
+      user.email = updateUserDto.email;
+    }
+
+    if (updateUserDto.nome) {
+      user.nome = updateUserDto.nome;
+    }
+
+    if (updateUserDto.senha) {
+      const saltRounds = 10;
+      user.senha_hash = await bcrypt.hash(updateUserDto.senha, saltRounds);
+    }
+
+    const updatedUser = await this.userRepository.save(user);
+
+    const { senha_hash: _, ...result } = updatedUser;
+    return result;
+  }
+
+  async delete(id: string): Promise<void> {
+    const user = await this.findOneById(id);
+    await this.userRepository.remove(user);
+  }
+
   async assignRoleToUser(userId: string, roleId: string): Promise<Omit<User, 'senha_hash'>> {
     const user = await this.findOneById(userId);
     const role = await this.rolesService.findOne(roleId); // Throws if not found

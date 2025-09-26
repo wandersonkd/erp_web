@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   Button,
@@ -11,15 +11,36 @@ import {
   TextField,
   Typography,
   Box,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 
 export default function CreateUserPage() {
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
-  const [cargo, setCargo] = useState('');
+  const [roleId, setRoleId] = useState('');
+  const [roles, setRoles] = useState<{ id: string; nome: string }[]>([]);
+  const [loadingRoles, setLoadingRoles] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const response = await axios.get('http://localhost:3000/roles');
+        setRoles(response.data);
+      } catch (error) {
+        console.error('Erro ao buscar perfis:', error);
+      } finally {
+        setLoadingRoles(false);
+      }
+    };
+
+    fetchRoles();
+  }, []);
 
   const validateEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -47,7 +68,7 @@ export default function CreateUserPage() {
         nome,
         email,
         senha,
-        cargo,
+        roleId: roleId || undefined,
       });
 
       if (response.status === 201) {
@@ -57,7 +78,7 @@ export default function CreateUserPage() {
         setNome('');
         setEmail('');
         setSenha('');
-        setCargo('');
+        setRoleId('');
         // Redirect to user list page
         window.location.href = '/dashboard/usuarios'; // Simple redirection
       }
@@ -105,13 +126,24 @@ export default function CreateUserPage() {
               margin="normal"
               required
             />
-            <TextField
-              label="Cargo"
-              value={cargo}
-              onChange={(e) => setCargo(e.target.value)}
-              fullWidth
-              margin="normal"
-            />
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Perfil</InputLabel>
+              <Select
+                value={roleId}
+                onChange={(e) => setRoleId(e.target.value)}
+                label="Perfil"
+                disabled={loadingRoles}
+              >
+                <MenuItem value="">
+                  <em>Nenhum</em>
+                </MenuItem>
+                {roles.map((role) => (
+                  <MenuItem key={role.id} value={role.id}>
+                    {role.nome}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
             {error && (
               <Typography color="error" variant="body2" sx={{ mt: 2 }}>
                 {error}
